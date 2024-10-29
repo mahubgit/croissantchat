@@ -23,3 +23,6 @@ class Config:
     
     # Paramètres du cache
     MODELS_DIR = os.environ.get('MODELS_DIR', '/chatbot/app/models')
+
+    MAX_INPUT_LENGTH = 512  # Longueur maximale de l'entrée en tokens
+    MAX_NEW_TOKENS = 256    # Nombre maximum de nouveaux tokens à générer

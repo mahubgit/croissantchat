@@ -63,6 +63,32 @@ def clean_response(response, conversation):
     response = re.sub(r'\s+', ' ', response)
     return response.strip()
 
+def prepare_conversation(message, history):
+    """Prépare la conversation en respectant les limites de tokens"""
+    conversation = ""
+    
+    # Calculer combien d'historique on peut inclure
+    if history:
+        # On commence par le message actuel
+        temp_conv = f"Humain : {message}\nAssistant :"
+        current_tokens = len(tokenizer.encode(temp_conv))
+        
+        # On ajoute l'historique en commençant par les messages les plus récents
+        for entry in reversed(history):
+            entry_text = f"Humain : {entry['user']}\nAssistant : {entry['bot']}\n"
+            entry_tokens = len(tokenizer.encode(entry_text))
+            
+            # Vérifier si l'ajout de cette entrée dépasserait la limite
+            if current_tokens + entry_tokens < Config.MAX_INPUT_LENGTH:
+                conversation = entry_text + conversation
+                current_tokens += entry_tokens
+            else:
+                break
+    
+    # Ajouter le message actuel
+    conversation += f"Humain : {message}\nAssistant :"
+    return conversation
+
 @app.route('/')
 def home():
     return render_template('index.html', config=Config)
@@ -77,10 +103,7 @@ def chat():
             if 'history' not in session:
                 session['history'] = []
             
-            conversation = ""
-            for entry in session['history'][-Config.MAX_HISTORY_LENGTH:]:
-                conversation += f"Humain : {entry['user']}\nAssistant : {entry['bot']}\n"
-            conversation += f"Humain : {message}\nAssistant :"
+            conversation = prepare_conversation(message, session['history'])
         else:
             conversation = f"Humain : {message}\nAssistant :"
         
@@ -89,7 +112,7 @@ def chat():
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
-                max_length=Config.MAX_LENGTH,
+                max_new_tokens=Config.MAX_NEW_TOKENS,  # Utiliser max_new_tokens au lieu de max_length
                 min_length=Config.MIN_LENGTH,
                 do_sample=True,
                 temperature=Config.TEMPERATURE,
