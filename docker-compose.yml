@@ -1,0 +1,29 @@
+services:
+  chatbot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./app:/chatbot/app:ro
+      - model-data:/chatbot/app/models
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TRANSFORMERS_CACHE=/chatbot/app/models
+      - HF_HOME=/chatbot/app/models
+      # Paramètres configurables
+      - SECRET_KEY=votre_clé_secrète
+      - MAX_HISTORY_LENGTH=5
+      - MAX_LENGTH=512
+      - MIN_LENGTH=20
+      - TEMPERATURE=0.7
+      - USE_FLOAT16=true
+      - DEVICE=auto
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+volumes:
+  model-data:
