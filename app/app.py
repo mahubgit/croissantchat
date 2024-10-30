@@ -1,6 +1,6 @@
 import os
 from flask import Flask, render_template, request, jsonify, session
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 import torch
 import re
 from config import Config
@@ -12,6 +12,15 @@ app.config.from_object(Config)
 os.environ['TRANSFORMERS_CACHE'] = Config.MODELS_DIR
 os.environ['HF_HOME'] = Config.MODELS_DIR
 
+def get_quantization_config():
+    """Configuration pour la quantification 8-bit"""
+    return BitsAndBytesConfig(
+        load_in_8bit=True,
+        bnb_8bit_use_double_quant=True,
+        bnb_8bit_quant_type="nf8",
+        bnb_8bit_compute_dtype=torch.float16
+    )
+
 def save_model_locally():
     """Télécharge et sauvegarde le modèle localement si ce n'est pas déjà fait"""
     local_model_path = os.path.join(Config.MODELS_DIR, 'model_local')
@@ -19,10 +28,13 @@ def save_model_locally():
     if not os.path.exists(local_model_path):
         print("Premier lancement : Téléchargement et sauvegarde du modèle...")
         tokenizer = AutoTokenizer.from_pretrained(Config.MODEL_NAME, cache_dir=Config.MODELS_DIR)
+        
+        quantization_config = get_quantization_config()
         model = AutoModelForCausalLM.from_pretrained(
             Config.MODEL_NAME,
-            torch_dtype=torch.float16 if Config.USE_FLOAT16 and torch.cuda.is_available() else torch.float32,
-            cache_dir=Config.MODELS_DIR
+            cache_dir=Config.MODELS_DIR,
+            quantization_config=quantization_config,
+            device_map="auto"  # Gestion automatique de la distribution sur le GPU
         )
         
         tokenizer.save_pretrained(local_model_path)
@@ -44,14 +56,16 @@ device = get_device()
 try:
     print(f"Chargement du modèle local depuis : {local_model_path}")
     tokenizer = AutoTokenizer.from_pretrained(local_model_path)
+    
+    quantization_config = get_quantization_config()
     model = AutoModelForCausalLM.from_pretrained(
         local_model_path,
-        torch_dtype=torch.float16 if Config.USE_FLOAT16 and torch.cuda.is_available() else torch.float32,
+        quantization_config=quantization_config,
+        device_map="auto",
         local_files_only=True
     )
     
-    model = model.to(device)
-    print(f"Modèle chargé sur {device.upper()}")
+    print(f"Modèle chargé avec quantification 8-bit")
     
 except Exception as e:
     print(f"Erreur lors du chargement du modèle local : {str(e)}")

@@ -5,9 +5,15 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'votre_clé_secrète_par_défaut')
     
     # Paramètres du modèle
-    MODEL_NAME = os.environ.get('MODEL_NAME', 'croissantllm/CroissantLLMChat-v0.1')
+    # MODEL_NAME = os.environ.get('MODEL_NAME', 'croissantllm/CroissantLLMChat-v0.1')
+    MODEL_NAME = 'croissantllm/CroissantLLMChat-v0.1-q0f32-MLC'
     MAX_HISTORY_LENGTH = int(os.environ.get('MAX_HISTORY_LENGTH', '5'))  # 0 pour désactiver le contexte
     
+    # Paramètres de génération optimisés
+    MAX_NEW_TOKENS = 256
+    MAX_INPUT_LENGTH = 512
+    BATCH_SIZE = 1
+
     # Paramètres de génération
     MAX_LENGTH = int(os.environ.get('MAX_LENGTH', '512'))
     MIN_LENGTH = int(os.environ.get('MIN_LENGTH', '20'))

@@ -14,7 +14,7 @@ services:
       - HF_HOME=/chatbot/app/models
       # Paramètres configurables
       - SECRET_KEY=votre_clé_secrète
-      - MAX_HISTORY_LENGTH=5
+      - MAX_HISTORY_LENGTH=0
       - MAX_LENGTH=512
       - MIN_LENGTH=20
       - TEMPERATURE=0.7
